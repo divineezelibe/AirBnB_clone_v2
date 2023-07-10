@@ -3,7 +3,7 @@
 import os.path
 from fabric.api import env
 from fabric.api import put
-from fabric.api import run, sudo
+from fabric.api import run
 
 env.hosts = ["54.90.13.195", "54.90.13.195"]
 
@@ -24,11 +24,10 @@ def do_deploy(archive_path):
 
     if put(archive_path, "/tmp/{}".format(file)).failed is True:
         return False
-
     if run("rm -rf /data/web_static/releases/{}/".
            format(name)).failed is True:
         return False
-    if sudo("mkdir -p /data/web_static/releases/{}/".
+    if run("mkdir -p /data/web_static/releases/{}/".
            format(name)).failed is True:
         return False
     if run("tar -xzf /tmp/{} -C /data/web_static/releases/{}/".
