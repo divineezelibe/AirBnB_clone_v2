@@ -10,6 +10,7 @@ from models.state import State
 from models.user import User
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+import MySQLdb
 
 
 class DBStorage:
