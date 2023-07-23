@@ -10,6 +10,14 @@ from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
+import shlex
+from os import environ
+
+classes = {
+            'BaseModel': BaseModel, 'User': User, 'Place': Place,
+            'State': State, 'City': City, 'Amenity': Amenity,
+            'Review': Review
+        }
 
 
 class HBNBCommand(cmd.Cmd):
@@ -18,11 +26,6 @@ class HBNBCommand(cmd.Cmd):
     # determines prompt for interactive/non-interactive modes
     prompt = '(hbnb) ' if sys.__stdin__.isatty() else ''
 
-    classes = {
-               'BaseModel': BaseModel, 'User': User, 'Place': Place,
-               'State': State, 'City': City, 'Amenity': Amenity,
-               'Review': Review
-              }
     dot_cmds = ['all', 'count', 'show', 'destroy', 'update']
     types = {
              'number_rooms': int, 'number_bathrooms': int,
@@ -73,7 +76,7 @@ class HBNBCommand(cmd.Cmd):
                 pline = pline[2].strip()  # pline is now str
                 if pline:
                     # check for *args or **kwargs
-                    if pline[0] is '{' and pline[-1] is'}'\
+                    if pline[0] is '{' and pline[-1] is '}'\
                             and type(eval(pline)) is dict:
                         _args = pline
                     else:
@@ -114,17 +117,31 @@ class HBNBCommand(cmd.Cmd):
         pass
 
     def do_create(self, args):
-        """ Create an object of any class"""
-        if not args:
+        """ Create an object of any class
+
+        Command syntax: create <Class name> <param 1> <param 2> <param 3>...
+        Param syntax: <key name>=<value>
+        """
+        try:
+            if not args:
+                raise SyntaxError()
+            my_list = args.split(" ")
+            obj = eval("{}()".format(my_list[0]))
+            for attr in my_list[1:]:
+                my_att = attr.split('=')
+                try:
+                    casted = HBNBCommand.verify_attribute(my_att[1])
+                except Exception:
+                    continue
+                if not casted:
+                    continue
+                setattr(obj, my_att[0], casted)
+            obj.save()
+            print("{}".format(obj.id))
+        except SyntaxError:
             print("** class name missing **")
-            return
-        elif args not in HBNBCommand.classes:
+        except NameError as e:
             print("** class doesn't exist **")
-            return
-        new_instance = HBNBCommand.classes[args]()
-        storage.save()
-        print(new_instance.id)
-        storage.save()
 
     def help_create(self):
         """ Help information for the create method """
@@ -197,23 +214,23 @@ class HBNBCommand(cmd.Cmd):
         print("Destroys an individual instance of a class")
         print("[Usage]: destroy <className> <objectId>\n")
 
-    def do_all(self, args):
+    def do_all(self, arg):
         """ Shows all objects, or all objects of a class"""
-        print_list = []
 
-        if args:
-            args = args.split(' ')[0]  # remove possible trailing args
-            if args not in HBNBCommand.classes:
-                print("** class doesn't exist **")
-                return
-            for k, v in storage._FileStorage__objects.items():
-                if k.split('.')[0] == args:
-                    print_list.append(str(v))
+        args = shlex.split(arg)
+        obj_list = []
+        if len(args) == 0:
+            obj_dict = storage.all()
+        elif args[0] in classes:
+            obj_dict = storage.all(classes[args[0]])
         else:
-            for k, v in storage._FileStorage__objects.items():
-                print_list.append(str(v))
-
-        print(print_list)
+            print("** class doesn't exist **")
+            return False
+        for key in obj_dict:
+            obj_list.append(str(obj_dict[key]))
+        print("[", end="")
+        print(", ".join(obj_list), end="")
+        print("]")
 
     def help_all(self):
         """ Help information for the all command """
@@ -319,6 +336,39 @@ class HBNBCommand(cmd.Cmd):
         """ Help information for the update class """
         print("Updates an object with new information")
         print("Usage: update <className> <id> <attName> <attVal>\n")
+
+    @classmethod
+    def verify_attribute(cls, attribute):
+        """verifies that an attribute is correctly formatted
+
+        Args:
+            attribute (any): attribute to be verified.
+
+        Returns:
+            any: attribute.
+        """
+        if attribute[0] is attribute[-1] is '"':
+            for i, c in enumerate(attribute[1:-1]):
+                if c is '"' and attribute[i] is not '\\':
+                    return None
+                if c is " ":
+                    return None
+            return attribute.strip('"').replace('_', ' ').replace("\\\"", "\"")
+        else:
+            flag = 0
+            allowed = "0123456789.-"
+            for c in attribute:
+                if c not in allowed:
+                    return None
+                if c is '.' and flag == 1:
+                    return None
+                elif c is '.' and flag == 0:
+                    flag = 1
+            if flag == 1:
+                return float(attribute)
+            else:
+                return int(attribute)
+
 
 if __name__ == "__main__":
     HBNBCommand().cmdloop()
