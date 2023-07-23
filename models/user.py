@@ -1,37 +1,27 @@
 #!/usr/bin/python3
-"""This module defines a class User"""
+""" Inherits from BaseModel."""
 from models.base_model import BaseModel, Base
-
-# SQLAlchemy modules
-from sqlalchemy import Column
-from sqlalchemy import String
+from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 
 
 class User(BaseModel, Base):
     """
-    Defines a class User
+    Defines class User.
 
     Attributes:
-        __tablename__ (str): Users MySQL table name
-
-        email (String): User's email address column
-        password (String): User's password column
-        first_name (String): User's first name column
-        last_name (String): User's last name column
+        __tablename__ (str): The name of the MySQL table to store users.
+        email: (sqlalchemy String): The user's email address.
+        password (sqlalchemy String): The user's password.
+        first_name (sqlalchemy String): The user's first name.
+        last_name (sqlalchemy String): The user's last name.
+        places (sqlalchemy relationship): The User-Place relationship.
+        reviews (sqlalchemy relationship): The User-Review relationship.
     """
-    __tablename__ = 'users'
-
+    __tablename__ = "users"
     email = Column(String(128), nullable=False)
     password = Column(String(128), nullable=False)
     first_name = Column(String(128))
     last_name = Column(String(128))
-
-    places = relationship('Place',
-                          backref='user',
-                          cascade='all, delete-orphan',
-                          passive_deletes=True)
-    reviews = relationship('Review',
-                           backref='user',
-                           cascade='all, delete-orphan',
-                           passive_deletes=True)
+    places = relationship("Place", backref="user", cascade="delete")
+    reviews = relationship("Review", backref="user", cascade="delete")

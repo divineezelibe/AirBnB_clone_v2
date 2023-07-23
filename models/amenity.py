@@ -1,22 +1,19 @@
 #!/usr/bin/python3
-""" State Module for HBNB project """
+""" Defines the Amenity class."""
 from models.base_model import BaseModel, Base
-# SQLAlchemy modules
-from sqlalchemy import Column, String, ForeignKey, Integer, Float
+from sqlalchemy import Column, String
+from sqlalchemy.orm import relationship
 
 
 class Amenity(BaseModel, Base):
-    """Defines a class Amenity
-
-    Attributes:
-        __tablename__ (str): amenities
-
-        name (str): name of amenity.
     """
-
-    __tablename__ = 'amenities'
+    Represents class State.
+    Attributes:
+        __tablename__ (str): The name of the MySQL table to store amenities.
+        name (str): The name of the amenity object.
+        place_amenities (sqlalchemy relationship): Place-Amenity relationship.
+    """
+    __tablename__ = "amenities"
     name = Column(String(128), nullable=False)
-
-    def __init__(self, *args, **kwargs):
-        """initializes state"""
-        super().__init__(*args, **kwargs)
+    place_amenities = relationship("Place", secondary="place_amenity",
+                                   viewonly=True)
